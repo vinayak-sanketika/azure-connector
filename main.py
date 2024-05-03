@@ -1,10 +1,21 @@
 
 from azure.storage.blob import ContainerClient, BlobClient
-
+import json
 
 class AzureBlobStorage:
-    def __init__(self, connection_string):
-        self.connection_string = connection_string
+    def __init__(self, config_file_path: str):
+        with open(config_file_path, "r") as config_file:
+            config = json.load(config_file)
+
+        
+        self.account_name = config["credentials"]["account_name"]
+        self.account_key = config["credentials"]["account_key"]
+        self.container_name = config["containername"]
+        self.blob_endpoint = config.get("blob_endpoint")
+
+        self.connection_string = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};BlobEndpoint={self.blob_endpoint}" 
+
+    
 
     def list_blobs_in_container(self, container_name):
         try:
@@ -45,7 +56,7 @@ class AzureBlobStorage:
             print(f"File Type: {blob_name.split('.')[-1]}")
             print(f"Container: {properties.container}")
             print(f"Created Time:{properties.creation_time}")
-            print(f"Blob size: {properties.size}")
+            print(f"Blob file_size: {properties.size}")
             print(f"Blob metadata: {properties.metadata}")
             print(f"Blob etag: {properties.etag}")
 
@@ -54,8 +65,11 @@ class AzureBlobStorage:
         except Exception as ex:
             print("Exception:", ex)
 
-    def get_blob_tags(self, blob_client):
+    def get_blob_tags(self, blob_name):
         try:
+            blob_client = BlobClient.from_connection_string(
+                conn_str=self.connection_string, container_name=self.container_name, blob_name=blob_name
+            )
             tags = blob_client.get_blob_tags()
             print("Blob tags:")
             for k, v in tags.items():
@@ -65,8 +79,11 @@ class AzureBlobStorage:
         except Exception as ex:
             print("Exception:", ex)
 
-    def set_blob_tags(self, blob_client, tags):
+    def set_blob_tags(self, tags):
         try:
+            blob_client = BlobClient.from_connection_string(
+                conn_str=self.connection_string, container_name=self.container_name, blob_name=blob_name
+            )
             existing_tags = blob_client.get_blob_tags() or {}
             existing_tags.update(tags)
             blob_client.set_blob_tags(existing_tags)
@@ -78,18 +95,17 @@ class AzureBlobStorage:
 
 
 
-connection_string="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
-cont_name="vinstore"
+config_file_path = "config.json" 
+blob_storage = AzureBlobStorage(config_file_path)
+blob_storage.list_blobs_in_container(blob_storage.container_name)
 
-blob_storage = AzureBlobStorage(connection_string)
-blob_storage.list_blobs_in_container(cont_name)
 
 blob_name = "transform.txt"
-blob_client = BlobClient.from_connection_string(connection_string, cont_name, blob_name)
+
 print(" ")
-blob_storage.get_blob_tags(blob_client)
+blob_storage.get_blob_tags(blob_name)
 
 # Updateing the tags:
-new_tags = {"hey":"there" }
-blob_storage.set_blob_tags(blob_client, new_tags)
-blob_storage.get_blob_tags(blob_client)
+new_tags = {"Dept":"implementation" }
+blob_storage.set_blob_tags(new_tags)
+blob_storage.get_blob_tags(blob_name)
