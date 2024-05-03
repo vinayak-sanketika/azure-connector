@@ -1,8 +1,12 @@
 
+from typing import Dict, List, Any
 from azure.storage.blob import ContainerClient, BlobClient
+from blob_provider import BlobProvider
+from object_info import ObjectInfo,Tag
 import json
 
-class AzureBlobStorage:
+
+class AzureBlobStorage(BlobProvider):
     def __init__(self, config_file_path: str):
         with open(config_file_path, "r") as config_file:
             config = json.load(config_file)
@@ -15,9 +19,38 @@ class AzureBlobStorage:
 
         self.connection_string = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};BlobEndpoint={self.blob_endpoint}" 
 
-    
+    def fetch_objects(self) -> List[ObjectInfo]:
+        print("inside fetch_objects")
+       
+        objects = self._list_blobs_in_container(self.container_name)
+        objects_info=[]
+        blob_client = BlobClient.from_connection_string(
+                conn_str=self.connection_string, container_name=self.container_name, blob_name=blob_name
+            )
+        
+        for obj in objects:
+            account_name = self.connection_string.split(";")[1].split("=")[-1]
+            blob_location = f"https://{account_name}.blob.core.windows.net/{self.container_name}/{obj}"
+            properties = blob_client.get_blob_properties()
+            
+            print("prop",obj)
+            object_info = ObjectInfo(
+               name=obj.split(".")[0],
+               file_size_kb=properties.size,
+               location= blob_location,
+               type=obj.split(".")[-1],
+               tags= self._get_blob_tags(obj)
 
-    def list_blobs_in_container(self, container_name):
+
+         )
+            objects_info.append(object_info.to_json())
+        print(objects_info)
+        return objects_info
+    
+        
+
+
+    def _list_blobs_in_container(self, container_name):
         try:
             container = ContainerClient.from_connection_string(
                 conn_str=self.connection_string, container_name=container_name
@@ -36,12 +69,14 @@ class AzureBlobStorage:
             print(blob_metadata, "\n")
 
             for blob_name in blob_metadata:
-                self.get_properties(container_name, blob_name)
+                self._get_properties(container_name, blob_name)
 
         except Exception as ex:
             print("Exception:", ex)
+            ##
+        return blob_metadata
 
-    def get_properties(self, container_name, blob_name):
+    def _get_properties(self, container_name, blob_name):
         try:
             blob_client = BlobClient.from_connection_string(
                 conn_str=self.connection_string, container_name=container_name, blob_name=blob_name
@@ -65,21 +100,27 @@ class AzureBlobStorage:
         except Exception as ex:
             print("Exception:", ex)
 
-    def get_blob_tags(self, blob_name):
+    def _get_blob_tags(self, blob_name) -> List[Tag]:
         try:
             blob_client = BlobClient.from_connection_string(
                 conn_str=self.connection_string, container_name=self.container_name, blob_name=blob_name
             )
             tags = blob_client.get_blob_tags()
             print("Blob tags:")
+            tag_objects = []
             for k, v in tags.items():
                 print(k, v)
+                tag_objects.append(Tag(k, v))
+            return tag_objects
+            
         except (ValueError, IOError) as e:
             print(f"Error retrieving tags: {e}")
         except Exception as ex:
             print("Exception:", ex)
+        #return [Tag(tag["key"], tag[":"]) for tag in tags]
+    
 
-    def set_blob_tags(self, tags):
+    def _set_blob_tags(self, tags):
         try:
             blob_client = BlobClient.from_connection_string(
                 conn_str=self.connection_string, container_name=self.container_name, blob_name=blob_name
@@ -97,15 +138,17 @@ class AzureBlobStorage:
 
 config_file_path = "config.json" 
 blob_storage = AzureBlobStorage(config_file_path)
-blob_storage.list_blobs_in_container(blob_storage.container_name)
+blob_storage._list_blobs_in_container(blob_storage.container_name)
 
 
 blob_name = "transform.txt"
 
 print(" ")
-blob_storage.get_blob_tags(blob_name)
+blob_storage._get_blob_tags(blob_name)
 
 # Updateing the tags:
 new_tags = {"Dept":"implementation" }
-blob_storage.set_blob_tags(new_tags)
-blob_storage.get_blob_tags(blob_name)
+blob_storage._set_blob_tags(new_tags)
+blob_storage._get_blob_tags(blob_name)
+
+blob_storage.fetch_objects()
