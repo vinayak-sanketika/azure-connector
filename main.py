@@ -15,7 +15,7 @@ class AzureBlobStorage(BlobProvider):
         self.account_name = config["credentials"]["account_name"]
         self.account_key = config["credentials"]["account_key"]
         self.container_name = config["containername"]
-        self.blob_endpoint = config.get("blob_endpoint")
+        self.blob_endpoint = config["blob_endpoint"]
 
         self.connection_string = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};BlobEndpoint={self.blob_endpoint}" 
 
@@ -138,17 +138,17 @@ class AzureBlobStorage(BlobProvider):
 
 config_file_path = "config.json" 
 blob_storage = AzureBlobStorage(config_file_path)
-blob_storage._list_blobs_in_container(blob_storage.container_name)
+#blob_storage._list_blobs_in_container(blob_storage.container_name)
 
 
 blob_name = "transform.txt"
+
+blob_storage.fetch_objects()
 
 print(" ")
 blob_storage._get_blob_tags(blob_name)
 
 # Updateing the tags:
-new_tags = {"Dept":"implementation" }
+new_tags = {"Dept":"done" }
 blob_storage._set_blob_tags(new_tags)
 blob_storage._get_blob_tags(blob_name)
-
-blob_storage.fetch_objects()
