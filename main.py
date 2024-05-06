@@ -107,17 +107,17 @@ class AzureBlobStorage(BlobProvider):
             )
             tags = blob_client.get_blob_tags()
             print("Blob tags:")
-            tag_objects = []
+            
             for k, v in tags.items():
                 print(k, v)
-                tag_objects.append(Tag(k, v))
-            return tag_objects
+                
+            #return tag_objects
             
         except (ValueError, IOError) as e:
             print(f"Error retrieving tags: {e}")
         except Exception as ex:
             print("Exception:", ex)
-        #return [Tag(tag["key"], tag[":"]) for tag in tags]
+        return [Tag(k,v) for k,v in tags.items()]
     
 
     def _set_blob_tags(self, tags):
@@ -149,6 +149,6 @@ print(" ")
 blob_storage._get_blob_tags(blob_name)
 
 # Updateing the tags:
-new_tags = {"Dept":"done" }
+new_tags = {"Dept":"Tech" }
 blob_storage._set_blob_tags(new_tags)
 blob_storage._get_blob_tags(blob_name)
