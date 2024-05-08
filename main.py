@@ -1,4 +1,4 @@
-from azureBlob import *
+from azureBlob import AzureBlobStorage
 
 
 
@@ -20,20 +20,28 @@ new_tags = {"apt":"testing" }
 
 
 object_path="wasb://vinstore@storageemulator/unemployment.csv"
-file_format="csv"
+file_format="iv"
 obj_file_type=object_path.split(".")[1]
-try:
-    if file_format!=obj_file_type:
-       raise Exception(f"File_format {file_format} not matching with the blob file type {obj_file_type}")
-    
-    else:
-        spark = blob_storage._get_spark_session()
-        blob_storage.read_object(object_path,spark,file_format)
-except Exception as e:
-    print("Exception:",e)
+
+#Tags
+
 blob_storage.get_blob_tags(object_path)
 blob_storage.set_blob_tag(object_path,new_tags)
 blob_storage.get_blob_tags(object_path)
+
+# try:
+#     if file_format!=obj_file_type:
+#        raise Exception(f"File_format {file_format} not matching with the blob file type {obj_file_type}")
+    
+#     else:
+#         spark = blob_storage._get_spark_session()
+#         blob_storage.read_object(object_path,spark,file_format)
+# except Exception as e:
+#     print("Exception:",e)
+spark = blob_storage._get_spark_session()
+blob_storage.read_object(object_path,spark,file_format)
+
+
 
 #blob_storage.get_spark_config()
 #blob_storage.read_object(object_path,file_format,SparkSession)

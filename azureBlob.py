@@ -26,31 +26,35 @@ class AzureBlobStorage(BlobProvider):
    
     def fetch_objects(self) -> List[ObjectInfo]:
         print("inside fetch_objects")
-       
-        objects = self._list_blobs_in_container(self.container_name)
-        objects_info=[]
-        
-        
-        for obj in objects:
-            blob_client = BlobClient.from_connection_string(
-                conn_str=self.connection_string, container_name=self.container_name, blob_name=obj
+        try:
+            objects = self._list_blobs_in_container(self.container_name)
+            objects_info=[]
+            if objects==None:
+                raise Exception("No objects found")
+            
+            for obj in objects:
+                blob_client = BlobClient.from_connection_string(
+                    conn_str=self.connection_string, container_name=self.container_name, blob_name=obj
+                )
+                account_name = self.connection_string.split(";")[1].split("=")[-1]
+                blob_location = f"https://{account_name}.blob.core.windows.net/{self.container_name}/{obj}"
+                properties = blob_client.get_blob_properties()
+            
+                #print("prop",obj)
+                object_info = ObjectInfo(
+                name=obj.split(".")[0],
+                file_size_kb=properties.size,
+                location= blob_location,
+                type=obj.split(".")[-1],
+                tags= self.get_blob_tags(obj)
+
+
             )
-            account_name = self.connection_string.split(";")[1].split("=")[-1]
-            blob_location = f"https://{account_name}.blob.core.windows.net/{self.container_name}/{obj}"
-            properties = blob_client.get_blob_properties()
-        
-            #print("prop",obj)
-            object_info = ObjectInfo(
-               name=obj.split(".")[0],
-               file_size_kb=properties.size,
-               location= blob_location,
-               type=obj.split(".")[-1],
-               tags= self.get_blob_tags(obj)
-
-
-         )
-            objects_info.append(object_info.to_json())
+                objects_info.append(object_info.to_json())
         #print(objects_info)
+        except Exception as e:
+            print("Exception:",e)
+            exit()
         return objects_info
     
     def read_object(self, object_path: str, sc: SparkSession, file_format: str) -> DataFrame:
@@ -91,11 +95,14 @@ class AzureBlobStorage(BlobProvider):
 
             for blob_name in blob_metadata:
                 self._get_properties(container_name, blob_name)
-
+            if blob_metadata==None:
+                raise Exception("NO objs")
+            
+            return blob_metadata
         except Exception as ex:
             print("Exception:", ex)
             ##
-        return blob_metadata
+        
 
     def _get_spark_session(self):
         spark = SparkSession.builder\
