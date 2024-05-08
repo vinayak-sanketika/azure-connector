@@ -143,10 +143,8 @@ class AzureBlobStorage(BlobProvider):
             #return tag_objects
             
         except (ValueError, IOError) as e:
-            print("helo")
             print(f"Error retrieving tags: {e}")
         except Exception as ex:
-            print("hi")
             print("Exception:", ex)
         return [Tag(k,v) for k,v in tags.items()]
     
