@@ -5,10 +5,10 @@ from pyspark.sql import SparkSession, DataFrame
 
 class BlobProvider(ABC):
     @abstractmethod
-    def fetch_objects(self,config: Dict[str, Any] = None) -> List[ObjectInfo]:
+    def fetch_objects(self) -> List[ObjectInfo]:
         pass
     @abstractmethod
-    def read_object(self,config: Dict[str, Any] = None, sc: SparkSession = None) -> DataFrame:
+    def read_object(self, sc: SparkSession = None) -> DataFrame:
         pass
     @abstractmethod
     def get_blob_tags(self,) -> List[Tag]:

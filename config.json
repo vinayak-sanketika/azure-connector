@@ -4,7 +4,7 @@
         "account_name":"devstoreaccount1",
         "account_key":"Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
     },
-    "containername":"vinstore1",
+    "containername":"vinstore",
     "blob_endpoint":"http://127.0.0.1:10000/devstoreaccount1",
     "prefix": null
 }
